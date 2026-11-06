@@ -74,7 +74,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio aggiornati
+// 5 Preset Vocali ufficiali di Pio
 const PIO_VOICE_PRESETS = [
   { id: 'normale', name: 'Pio Classico', desc: 'Naturale e bilanciato', pitch: 1.0, rate: 1.05, emoji: '🐥', customText: 'Pio!' },
   { id: 'profondo', name: 'Pio Baritono', desc: 'Bassissimo, profondo e cavernoso', pitch: 0.05, rate: 0.4, emoji: '🐻', customText: 'PIOOOOOO' },
@@ -643,7 +643,47 @@ export default function App() {
       )}
 
       <main className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* COLONNA SINISTRA: TIMER SPOSTATO SOPRA IL BOTTONE */}
         <section className="lg:col-span-5 flex flex-col gap-6">
+          {/* 1. PIO-TIMER PAUSE & CHIUSURA (Spostato sopra) */}
+          <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-md flex items-center gap-4">
+            <span className="text-4xl animate-bounce">🌙</span>
+            <div>
+              <h3 className="font-black text-amber-950 text-sm">Pio-Timer Pause & Chiusura</h3>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                {(() => {
+                  const now = new Date();
+                  const totalMins = now.getHours() * 60 + now.getMinutes();
+                  const dayOfWeek = now.getDay(); // 0 = Domenica, 6 = Sabato
+                  const closingTime = 18 * 60; // 18:00
+
+                  if (totalMins >= closingTime) {
+                    if (dayOfWeek === 6) {
+                      return `✨ È sabato sera! Buona fine settimana da Pio, ci rivediamo direttamente lunedì! 🐥🎉`;
+                    } else if (dayOfWeek === 0) {
+                      return `🌙 Buona domenica sera! Domani pronti per una nuova settimana insieme! 🐥✨`;
+                    } else {
+                      return `🌙 Buona serata! L'ufficio ha chiuso, ci vediamo domani con i nuovi turni! ✨`;
+                    }
+                  } else if (totalMins < 660) {
+                    return `☕ Manca poco alla Pausa Caffè delle 11:00!`;
+                  } else if (totalMins <= 690) {
+                    return `✨ È ora della Pausa Caffè! ☕`;
+                  } else if (totalMins < 765) {
+                    return `🍽️ Manca poco alla Pausa Pranzo delle 13:00!`;
+                  } else if (totalMins <= 780) {
+                    return `🚨 Mancano meno di 15 minuti alle 13:00! 🍽️`;
+                  } else if (totalMins <= 840) {
+                    return `🍲 Pausa Pranzo in corso! Buon appetito!`;
+                  } else {
+                    return `🌟 Turno pomeridiano in corso. Verso le 18:00 tutti a casa!`;
+                  }
+                })()}
+              </p>
+            </div>
+          </div>
+
+          {/* 2. IL BOTTONE DI PIO (Sotto il timer) */}
           <div className="bg-gradient-to-br from-yellow-300 via-amber-300 to-yellow-400 rounded-3xl p-6 border-4 border-amber-400 shadow-xl text-center flex flex-col items-center justify-between relative overflow-hidden">
             <div className="w-full">
               <span className="inline-block bg-amber-900 text-yellow-200 text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider mb-2">Effetto Vocale</span>
@@ -685,45 +725,9 @@ export default function App() {
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-md flex items-center gap-4">
-            <span className="text-4xl animate-bounce">🌙</span>
-            <div>
-              <h3 className="font-black text-amber-950 text-sm">Pio-Timer Pause & Chiusura</h3>
-              <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                {(() => {
-                  const now = new Date();
-                  const totalMins = now.getHours() * 60 + now.getMinutes();
-                  const dayOfWeek = now.getDay(); // 0 = Domenica, 6 = Sabato
-                  const closingTime = 18 * 60; // 18:00
-
-                  if (totalMins >= closingTime) {
-                    if (dayOfWeek === 6) {
-                      return `✨ È sabato sera! Buona fine settimana da Pio, ci rivediamo direttamente lunedì! 🐥🎉`;
-                    } else if (dayOfWeek === 0) {
-                      return `🌙 Buona domenica sera! Domani pronti per una nuova settimana insieme! 🐥✨`;
-                    } else {
-                      return `🌙 Buona serata! L'ufficio ha chiuso, ci vediamo domani con i nuovi turni! ✨`;
-                    }
-                  } else if (totalMins < 660) {
-                    return `☕ Manca poco alla Pausa Caffè delle 11:00!`;
-                  } else if (totalMins <= 690) {
-                    return `✨ È ora della Pausa Caffè! ☕`;
-                  } else if (totalMins < 765) {
-                    return `🍽️ Manca poco alla Pausa Pranzo delle 13:00!`;
-                  } else if (totalMins <= 780) {
-                    return `🚨 Mancano meno di 15 minuti alle 13:00! 🍽️`;
-                  } else if (totalMins <= 840) {
-                    return `🍲 Pausa Pranzo in corso! Buon appetito!`;
-                  } else {
-                    return `🌟 Turno pomeridiano in corso. Verso le 18:00 tutti a casa!`;
-                  }
-                })()}
-              </p>
-            </div>
-          </div>
         </section>
 
+        {/* COLONNA DESTRA: MENSA E REGISTRO ORE */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <section className="bg-white rounded-3xl p-6 border-4 border-amber-300 shadow-xl relative overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
