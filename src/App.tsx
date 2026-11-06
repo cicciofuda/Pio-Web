@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged 
+  onAuthStateChanged,
+  User as FirebaseUser
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -16,6 +17,45 @@ import {
   onSnapshot, 
   collection 
 } from 'firebase/firestore';
+
+// --- INTERFACCE TYPESCRIPT PER EVITARE GLI ERRORI DI BUILD (never / null) ---
+interface AppUser {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  approved?: boolean;
+  isAdmin?: boolean;
+  createdAt?: number;
+}
+
+interface MensaItem {
+  id: string;
+  userId?: string;
+  name?: string;
+  time?: string;
+  timestamp?: number;
+}
+
+interface WorkLog {
+  id: string;
+  userId?: string;
+  name?: string;
+  date?: string;
+  endTime?: string;
+  breakStart?: string;
+  breakEnd?: string;
+  note?: string;
+  timestamp?: number;
+}
+
+interface BroadcastMessage {
+  id: string;
+  text?: string;
+  author?: string;
+  time?: string;
+  timestamp?: number;
+}
 
 // CONFIGURAZIONE FIREBASE - PIO WEB v2.1
 const firebaseConfig = {
@@ -34,7 +74,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio (Tonalità ottimizzate e naturali)
+// 5 Preset Vocali ufficiali di Pio
 const PIO_VOICE_PRESETS = [
   { id: 'normale', name: 'Pio Classico', desc: 'Squillante e naturale', pitch: 1.0, rate: 1.0, emoji: '🐥' },
   { id: 'profondo', name: 'Pio Profondo', desc: 'Caldo, basso e naturale', pitch: 0.65, rate: 0.85, emoji: '🐻' },
@@ -44,15 +84,15 @@ const PIO_VOICE_PRESETS = [
 ];
 
 export default function App() {
-  // --- STATO AUTENTICAZIONE E UTENTI CLOUD (Tipizzati per evitare errori TS) ---
-  const [authUser, setAuthUser] = useState<any>(null);
-  const [users, setUsers] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // --- STATO AUTENTICAZIONE E UTENTI CLOUD (CON TIPI ESPLICITI) ---
+  const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
 
   // Dati sincronizzati in tempo reale
-  const [mensaList, setMensaList] = useState<any[]>([]);
-  const [workLogs, setWorkLogs] = useState<any[]>([]);
-  const [broadcastMessage, setBroadcastMessage] = useState<any>(null);
+  const [mensaList, setMensaList] = useState<MensaItem[]>([]);
+  const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
+  const [broadcastMessage, setBroadcastMessage] = useState<BroadcastMessage | null>(null);
   const [dismissedBroadcastId, setDismissedBroadcastId] = useState<string | null>(() => {
     return localStorage.getItem('pio_last_dismissed_broadcast') || null;
   });
@@ -68,7 +108,7 @@ export default function App() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   // Stati per la modifica dei turni
-  const [editingTurno, setEditingTurno] = useState<any>(null);
+  const [editingTurno, setEditingTurno] = useState<WorkLog | null>(null);
   const [editDate, setEditDate] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
   const [editHasBreak, setEditHasBreak] = useState(false);
@@ -106,32 +146,32 @@ export default function App() {
         return;
       }
 
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list: AppUser[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AppUser));
       setUsers(list);
 
-      const myProfile = list.find((u: any) => u.id === authUser.uid);
+      const myProfile = list.find(u => u.id === authUser.uid);
       if (myProfile) {
         setCurrentUser(myProfile);
       } else {
-        setCurrentUser({ id: authUser.uid, name: authUser.email, role: 'Collaboratore', approved: false, isAdmin: false });
+        setCurrentUser({ id: authUser.uid, name: authUser.email || '', role: 'Collaboratore', approved: false, isAdmin: false });
       }
     }, (error) => console.error("Errore sync utenti:", error));
 
     const unsubMensa = onSnapshot(mensaCol, (snapshot) => {
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list: MensaItem[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as MensaItem));
       setMensaList(list);
     }, (error) => console.error("Errore sync mensa:", error));
 
     const unsubLogs = onSnapshot(logsCol, (snapshot) => {
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      list.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+      const list: WorkLog[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as WorkLog));
+      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       setWorkLogs(list);
     }, (error) => console.error("Errore sync straordinari:", error));
 
     const unsubBroadcast = onSnapshot(broadcastCol, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      const docs: BroadcastMessage[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BroadcastMessage));
       if (docs.length > 0) {
-        docs.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+        docs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         setBroadcastMessage(docs[0]);
       } else {
         setBroadcastMessage(null);
@@ -184,9 +224,9 @@ export default function App() {
       utterance.rate = preset.rate;
       
       const voices = window.speechSynthesis.getVoices();
-      const naturalVoice = voices.find((v: any) => 
+      const naturalVoice = voices.find(v => 
         v.lang.toLowerCase().startsWith('it') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Alice'))
-      ) || voices.find((v: any) => v.lang.toLowerCase().startsWith('it'));
+      ) || voices.find(v => v.lang.toLowerCase().startsWith('it'));
 
       if (naturalVoice) {
         utterance.voice = naturalVoice;
@@ -201,7 +241,7 @@ export default function App() {
     try {
       await signInWithEmailAndPassword(auth, authEmail, authPassword);
       showToast('✅ Accesso effettuato!');
-    } catch (err) {
+    } catch {
       showToast('❌ Email o password non valide.');
     }
   };
@@ -223,8 +263,9 @@ export default function App() {
         createdAt: Date.now()
       });
       showToast('🐣 Registrazione completata! In attesa di autorizzazione.');
-    } catch (err: any) {
-      showToast('❌ Errore durante la registrazione: ' + err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Errore sconosciuto';
+      showToast('❌ Errore durante la registrazione: ' + errorMessage);
     }
   };
 
@@ -235,7 +276,7 @@ export default function App() {
 
   const isUserInMensa = useMemo(() => {
     if (!currentUser) return false;
-    return mensaList.some((item: any) => item.userId === currentUser.id);
+    return mensaList.some(item => item.userId === currentUser.id);
   }, [mensaList, currentUser]);
 
   const handleRegisterMensa = async () => {
@@ -259,7 +300,7 @@ export default function App() {
       });
       setMensaSuccessAlert(true);
       setTimeout(() => setMensaSuccessAlert(false), 5000);
-    } catch (e) {
+    } catch {
       showToast('Errore durante la registrazione a mensa.');
     }
   };
@@ -271,7 +312,7 @@ export default function App() {
       await deleteDoc(mensaDoc);
       setMensaSuccessAlert(false);
       showToast('Hai revocato la tua presenza alla mensa.');
-    } catch (e) {
+    } catch {
       showToast('Errore durante la revoca.');
     }
   };
@@ -304,7 +345,7 @@ export default function App() {
       });
       showToast('✅ Straordinario registrato nel cloud!');
       setFormLogNote('');
-    } catch (err) {
+    } catch {
       showToast('Errore durante il salvataggio.');
     } finally {
       setIsSubmitting(false);
@@ -331,12 +372,12 @@ export default function App() {
       });
       setEditingTurno(null);
       showToast('✏️ Turno modificato con successo!');
-    } catch (err) {
+    } catch {
       showToast('Errore durante la modifica.');
     }
   };
 
-  const handleDeleteWorkLog = async (log: any) => {
+  const handleDeleteWorkLog = async (log: WorkLog) => {
     if (log.userId !== currentUser?.id && !currentUser?.isAdmin) {
       showToast('❌ Non puoi eliminare il turno di un altro utente.');
       return;
@@ -346,7 +387,7 @@ export default function App() {
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'work_logs', log.id));
       showToast('🗑️ Turno eliminato con successo.');
-    } catch (err) {
+    } catch {
       showToast('Errore durante l\'eliminazione.');
     }
   };
@@ -372,7 +413,7 @@ export default function App() {
       setShowBroadcastModal(false);
       setNewBroadcastText('');
       showToast('📢 Notifica flash inviata a tutti!');
-    } catch (err) {
+    } catch {
       showToast('Errore durante l\'invio dell\'avviso.');
     }
   };
@@ -384,13 +425,13 @@ export default function App() {
       return;
     }
     try {
-      const deletePromises = workLogs.map((log: any) => 
+      const deletePromises = workLogs.map(log => 
         deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'work_logs', log.id))
       );
       await Promise.all(deletePromises);
       setShowClearConfirmModal(false);
       showToast('🧹 Registro ripulito per tutti!');
-    } catch (e) {
+    } catch {
       showToast('Errore durante la pulizia.');
     }
   };
@@ -401,7 +442,7 @@ export default function App() {
       const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
       await setDoc(userDoc, { approved: newStatus }, { merge: true });
       showToast(newStatus ? '✅ Utente autorizzato!' : '❌ Autorizzazione revocata.');
-    } catch (err) {
+    } catch {
       showToast('Errore durante la modifica permessi.');
     }
   };
@@ -614,7 +655,7 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              {users.map((u: any) => (
+              {users.map(u => (
                 <div key={u.id} className="flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50/50 rounded-xl border border-slate-200">
                   <div>
                     <span className="font-bold text-slate-800">{u.name}</span>
@@ -830,7 +871,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
-                  {mensaList.map((person: any) => (
+                  {mensaList.map(person => (
                     <div 
                       key={person.id} 
                       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border ${
@@ -992,7 +1033,7 @@ export default function App() {
                       Nessun orario presente nel registro.
                     </div>
                   ) : (
-                    workLogs.map((log: any) => {
+                    workLogs.map(log => {
                       const breakTaken = log.breakStart && log.breakEnd;
                       const isOwner = currentUser && log.userId === currentUser.id;
                       return (
