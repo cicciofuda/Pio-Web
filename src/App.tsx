@@ -74,12 +74,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio (Con tonalità distinte)
+// 5 Preset Vocali ufficiali di Pio (Con Pio Sonnolento personalizzato a sbadiglio)
 const PIO_VOICE_PRESETS = [
   { id: 'normale', name: 'Pio Classico', desc: 'Squillante e bilanciato', pitch: 1.0, rate: 1.0, emoji: '🐥' },
-  { id: 'profondo', name: 'Pio Baritono', desc: 'Molto basso, profondo e lento', pitch: 0.35, rate: 0.75, emoji: '🐻' },
+  { id: 'profondo', name: 'Pio Baritono', desc: 'Bassissimo, profondo e lento', pitch: 0.1, rate: 0.5, emoji: '🐻' },
   { id: 'acuto', name: 'Pio Hyper-Acuto', desc: 'Altissimo, vispo e sottilissimo', pitch: 1.9, rate: 1.25, emoji: '🐣' },
-  { id: 'addormentato', name: 'Pio Sonnolento', desc: 'Lentissimo e pigro', pitch: 0.5, rate: 0.45, emoji: '🥱' },
+  { id: 'addormentato', name: 'Pio Sonnolento', desc: 'Sembra uno sbadiglio profondo', pitch: 0.3, rate: 0.35, emoji: '🥱', customText: 'piiiiiiiiiooooooo... zzz...' },
   { id: 'frenetico', name: 'Pio Turbo-Speed', desc: 'Velocissimo e scattante', pitch: 1.6, rate: 1.85, emoji: '⚡' }
 ];
 
@@ -200,15 +200,17 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // --- MOTORE AUDIO VOCALE CON SUPPORTO AL TESTO PERSONALIZZATO (SBADIGLIO) ---
   const speakPio = (presetId = activePreset) => {
     setIsPioPressed(true);
     setTimeout(() => setIsPioPressed(false), 300);
 
     const preset = PIO_VOICE_PRESETS.find(p => p.id === presetId) || PIO_VOICE_PRESETS[0];
+    const textToSpeak = (preset as any).customText || "PIOOOOOO";
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("PIOOOOOO");
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = "it-IT";
       utterance.pitch = preset.pitch;
       utterance.rate = preset.rate;
@@ -537,7 +539,7 @@ export default function App() {
               <h1 className="text-2xl md:text-3xl font-black text-amber-950 tracking-tight flex items-center gap-2">
                 PIO WEB <span className="text-xs bg-amber-900 text-yellow-300 font-bold px-2 py-0.5 rounded-full">v2.1</span>
               </h1>
-              <p className="text-xs font-semibold text-amber-900">Il portale allegro della mensa e dei turni</p>
+              <p className="text-xs font-semibold text-amber-900">Il portale per la facile gestione delle attività di Pio</p>
             </div>
           </div>
 
@@ -644,7 +646,7 @@ export default function App() {
             <div className="w-full">
               <span className="inline-block bg-amber-900 text-yellow-200 text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider mb-2">Effetto Vocale</span>
               <h2 className="text-2xl md:text-3xl font-black text-amber-950">Il Bottone di Pio</h2>
-              <p className="text-amber-900 text-xs font-medium mt-1">Premi per far cantare il pulcino con la voce che preferisci!</p>
+              <p className="text-amber-900 text-xs font-medium mt-1">premi per chiamare pio con il tono che preferisci</p>
             </div>
 
             <div className="my-8">
@@ -675,19 +677,37 @@ export default function App() {
           </div>
 
           <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-md flex items-center gap-4">
-            <span className="text-4xl animate-bounce">☕</span>
+            <span className="text-4xl animate-bounce">🌙</span>
             <div>
-              <h3 className="font-black text-amber-950 text-sm">Pio-Timer Pause & Caffè</h3>
+              <h3 className="font-black text-amber-950 text-sm">Pio-Timer Pause & Chiusura</h3>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
                 {(() => {
                   const now = new Date();
                   const totalMins = now.getHours() * 60 + now.getMinutes();
-                  if (totalMins < 660) return `☕ Manca poco alla Pausa Caffè delle 11:00!`;
-                  if (totalMins <= 690) return `✨ È ora della Pausa Caffè! ☕`;
-                  if (totalMins < 765) return `🍽️ Manca poco alla Pausa Pranzo delle 13:00!`;
-                  if (totalMins <= 780) return `🚨 Mancano meno di 15 minuti alle 13:00! 🍽️`;
-                  if (totalMins <= 840) return `🍲 Pausa Pranzo in corso! Buon appetito!`;
-                  return `🌟 Giornata lavorativa nel vivo!`;
+                  const dayOfWeek = now.getDay(); // 0 = Domenica, 6 = Sabato
+                  const closingTime = 18 * 60; // 18:00
+
+                  if (totalMins >= closingTime) {
+                    if (dayOfWeek === 6) {
+                      return `✨ È sabato sera! Buona fine settimana da Pio, ci rivediamo direttamente lunedì! 🐥🎉`;
+                    } else if (dayOfWeek === 0) {
+                      return `🌙 Buona domenica sera! Domani pronti per una nuova settimana insieme! 🐥✨`;
+                    } else {
+                      return `🌙 Buona serata! L'ufficio ha chiuso, ci vediamo domani con i nuovi turni! ✨`;
+                    }
+                  } else if (totalMins < 660) {
+                    return `☕ Manca poco alla Pausa Caffè delle 11:00!`;
+                  } else if (totalMins <= 690) {
+                    return `✨ È ora della Pausa Caffè! ☕`;
+                  } else if (totalMins < 765) {
+                    return `🍽️ Manca poco alla Pausa Pranzo delle 13:00!`;
+                  } else if (totalMins <= 780) {
+                    return `🚨 Mancano meno di 15 minuti alle 13:00! 🍽️`;
+                  } else if (totalMins <= 840) {
+                    return `🍲 Pausa Pranzo in corso! Buon appetito!`;
+                  } else {
+                    return `🌟 Turno pomeridiano in corso. Verso le 18:00 tutti a casa!`;
+                  }
                 })()}
               </p>
             </div>
