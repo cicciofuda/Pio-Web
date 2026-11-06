@@ -18,7 +18,7 @@ import {
   collection 
 } from 'firebase/firestore';
 
-// --- INTERFACCE TYPESCRIPT PER EVITARE GLI ERRORI DI BUILD (never / null) ---
+// --- INTERFACCE TYPESCRIPT ---
 interface AppUser {
   id: string;
   name?: string;
@@ -57,9 +57,9 @@ interface BroadcastMessage {
   timestamp?: number;
 }
 
-// CONFIGURAZIONE FIREBASE - PIO WEB v2.1
+// CONFIGURAZIONE FIREBASE - Legge FIREBASE_API_TOKEN impostato su Vercel
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_TOKEN || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC8uXfyLicFBZWP4KlAvUUsnVe14CVioko",
+  apiKey: (import.meta.env as any).FIREBASE_API_TOKEN || (import.meta.env as any).VITE_FIREBASE_API_TOKEN || "AIzaSyC8uXfyLicFBZWP4KlAvUUsnVe14CVioko",
   authDomain: "pio-web-f402c.firebaseapp.com",
   projectId: "pio-web-f402c",
   storageBucket: "pio-web-f402c.firebasestorage.app",
@@ -74,17 +74,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio
+// 5 Preset Vocali ufficiali di Pio (MODIFICATI E MOLTO PIÙ DIVERSI TRA LORO)
 const PIO_VOICE_PRESETS = [
-  { id: 'normale', name: 'Pio Classico', desc: 'Squillante e naturale', pitch: 1.0, rate: 1.0, emoji: '🐥' },
-  { id: 'profondo', name: 'Pio Profondo', desc: 'Caldo, basso e naturale', pitch: 0.65, rate: 0.85, emoji: '🐻' },
-  { id: 'acuto', name: 'Pio Acuto', desc: 'Vispo e allegro da pulcino', pitch: 1.35, rate: 1.15, emoji: '🐣' },
-  { id: 'addormentato', name: 'Pio Addormentato', desc: 'Lento, pigro e rilassato', pitch: 0.8, rate: 0.65, emoji: '🥱' },
-  { id: 'frenetico', name: 'Pio Frenetico', desc: 'Scattante e veloce', pitch: 1.25, rate: 1.45, emoji: '⚡' }
+  { id: 'normale', name: 'Pio Classico', desc: 'Squillante e bilanciato', pitch: 1.0, rate: 1.0, emoji: '🐥' },
+  { id: 'profondo', name: 'Pio Baritono', desc: 'Molto basso, profondo e lento', pitch: 0.35, rate: 0.75, emoji: '🐻' },
+  { id: 'acuto', name: 'Pio Hyper-Acuto', desc: 'Altissimo, vispo e sottilissimo', pitch: 1.9, rate: 1.25, emoji: '🐣' },
+  { id: 'addormentato', name: 'Pio Sonnolento', desc: 'Lentissimo e pigro', pitch: 0.5, rate: 0.45, emoji: '🥱' },
+  { id: 'frenetico', name: 'Pio Turbo-Speed', desc: 'Velocissimo e scattante', pitch: 1.6, rate: 1.85, emoji: '⚡' }
 ];
 
 export default function App() {
-  // --- STATO AUTENTICAZIONE E UTENTI CLOUD (CON TIPI ESPLICITI) ---
+  // --- STATO AUTENTICAZIONE E UTENTI CLOUD ---
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -209,7 +209,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- MOTORE AUDIO VOCALE ---
+  // --- MOTORE AUDIO VOCALE RINNOVATO ---
   const speakPio = (presetId = activePreset) => {
     setIsPioPressed(true);
     setTimeout(() => setIsPioPressed(false), 300);
@@ -228,9 +228,7 @@ export default function App() {
         v.lang.toLowerCase().startsWith('it') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Alice'))
       ) || voices.find(v => v.lang.toLowerCase().startsWith('it'));
 
-      if (naturalVoice) {
-        utterance.voice = naturalVoice;
-      }
+      if (naturalVoice) utterance.voice = naturalVoice;
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -452,7 +450,6 @@ export default function App() {
     localStorage.setItem('pio_last_dismissed_broadcast', id);
   };
 
-  // --- VISTA FORM DI ACCESSO SE NON AUTENTICATO ---
   if (!authUser) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-amber-100 via-yellow-50 to-orange-100 flex items-center justify-center p-4">
@@ -533,20 +530,16 @@ export default function App() {
     );
   }
 
-  // --- VISTA APPLICAZIONE (UTENTE AUTENTICATO) ---
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-100 via-yellow-50 to-orange-100 text-slate-800 font-sans pb-16">
-      
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 text-white font-bold px-6 py-3 rounded-full shadow-2xl border-2 border-yellow-400 backdrop-blur transition-all flex items-center gap-2">
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* HEADER PRINCIPALE (v2.1) */}
       <header className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 shadow-lg border-b-4 border-amber-500 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-3xl shadow-md border-2 border-amber-600 animate-bounce">
               🐥
@@ -564,39 +557,24 @@ export default function App() {
               <div className="flex items-center justify-end gap-1.5">
                 <span className="text-sm font-black text-amber-950">{currentUser?.name || authUser.email}</span>
                 {currentUser?.approved ? (
-                  <span className="text-[10px] bg-green-600 text-white font-bold px-1.5 py-0.2 rounded-full" title="Account Autorizzato">
-                    Autorizzato ✓
-                  </span>
+                  <span className="text-[10px] bg-green-600 text-white font-bold px-1.5 py-0.2 rounded-full">Autorizzato ✓</span>
                 ) : (
-                  <span className="text-[10px] bg-orange-600 text-white font-bold px-1.5 py-0.2 rounded-full animate-pulse" title="In attesa di approvazione">
-                    In Attesa ⏳
-                  </span>
+                  <span className="text-[10px] bg-orange-600 text-white font-bold px-1.5 py-0.2 rounded-full animate-pulse">In Attesa ⏳</span>
                 )}
               </div>
               <span className="text-xs text-amber-900 font-medium">{currentUser?.role || 'Collaboratore'}</span>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow transition-colors"
-            >
+            <button onClick={handleLogout} className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow transition-colors">
               Esci 🚪
             </button>
 
             {currentUser?.isAdmin && (
               <>
-                <button
-                  onClick={() => setShowBroadcastModal(true)}
-                  className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-black px-2.5 py-1.5 rounded-xl shadow transition-all flex items-center gap-1 animate-pulse"
-                >
+                <button onClick={() => setShowBroadcastModal(true)} className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-black px-2.5 py-1.5 rounded-xl shadow transition-all animate-pulse">
                   📢 Avviso
                 </button>
-                <button
-                  onClick={() => setShowAdminPanel(!showAdminPanel)}
-                  className={`text-xs font-black px-2.5 py-1.5 rounded-xl shadow transition-all border ${
-                    showAdminPanel ? 'bg-purple-700 text-white border-purple-900' : 'bg-purple-100 text-purple-900 border-purple-400 hover:bg-purple-200'
-                  }`}
-                >
+                <button onClick={() => setShowAdminPanel(!showAdminPanel)} className={`text-xs font-black px-2.5 py-1.5 rounded-xl shadow transition-all border ${showAdminPanel ? 'bg-purple-700 text-white border-purple-900' : 'bg-purple-100 text-purple-900 border-purple-400'}`}>
                   ⚙️ Admin
                 </button>
               </>
@@ -605,13 +583,9 @@ export default function App() {
         </div>
       </header>
 
-      {/* AVVISO FLASH MONOUSO */}
       {broadcastMessage && dismissedBroadcastId !== broadcastMessage.id && (
-        <div 
-          onClick={() => handleDismissBroadcast(broadcastMessage.id)}
-          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer select-none transition-opacity"
-        >
-          <div className="bg-gradient-to-br from-amber-300 via-yellow-200 to-amber-400 border-4 border-amber-600 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-center pointer-events-none transform animate-in fade-in zoom-in duration-200">
+        <div onClick={() => handleDismissBroadcast(broadcastMessage.id)} className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer select-none">
+          <div className="bg-gradient-to-br from-amber-300 via-yellow-200 to-amber-400 border-4 border-amber-600 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-center pointer-events-none">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg border-2 border-amber-500 mb-3 animate-bounce">
               📢
             </div>
@@ -634,9 +608,7 @@ export default function App() {
             <span className="text-3xl">🐥⏳</span>
             <div>
               <p className="font-black text-sm md:text-base">Ciao {currentUser.name}! Il tuo profilo è in attesa di approvazione.</p>
-              <p className="text-xs text-amber-900 font-medium">
-                Un amministratore deve autorizzarti prima che tu possa segnarti alla mensa o registrare le tue ore.
-              </p>
+              <p className="text-xs text-amber-900 font-medium">Un amministratore deve autorizzarti prima che tu possa segnarti alla mensa o registrare le tue ore.</p>
             </div>
           </div>
         </div>
@@ -646,12 +618,8 @@ export default function App() {
         <section className="max-w-4xl mx-auto mt-4 px-4">
           <div className="bg-white rounded-3xl p-5 border-4 border-purple-400 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-purple-100 mb-4">
-              <h2 className="text-lg font-black text-purple-900 flex items-center gap-2">
-                ⚙️ Gestione Autorizzazioni Nuovi Utenti
-              </h2>
-              <span className="text-xs bg-purple-100 text-purple-800 font-bold px-2 py-1 rounded-full">
-                Area Riservata
-              </span>
+              <h2 className="text-lg font-black text-purple-900 flex items-center gap-2">⚙️ Gestione Autorizzazioni Nuovi Utenti</h2>
+              <span className="text-xs bg-purple-100 text-purple-800 font-bold px-2 py-1 rounded-full">Area Riservata</span>
             </div>
 
             <div className="space-y-2">
@@ -664,24 +632,12 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-2">
                     {u.approved ? (
-                      <span className="text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">
-                        Autorizzato ✓
-                      </span>
+                      <span className="text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">Autorizzato ✓</span>
                     ) : (
-                      <span className="text-xs font-bold text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full">
-                        In attesa
-                      </span>
+                      <span className="text-xs font-bold text-orange-700 bg-orange-100 px-2.5 py-1 rounded-full">In attesa</span>
                     )}
-
                     {!u.isAdmin && (
-                      <button
-                        onClick={() => handleToggleAuthorization(u.id, !u.approved)}
-                        className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${
-                          u.approved 
-                            ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-300' 
-                            : 'bg-green-600 text-white hover:bg-green-700 shadow'
-                        }`}
-                      >
+                      <button onClick={() => handleToggleAuthorization(u.id, !u.approved)} className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${u.approved ? 'bg-rose-100 text-rose-700 border border-rose-300' : 'bg-green-600 text-white shadow'}`}>
                         {u.approved ? 'Revoca' : 'Autorizza Ora'}
                       </button>
                     )}
@@ -693,77 +649,42 @@ export default function App() {
         </section>
       )}
 
-      {/* CONTENUTO PRINCIPALE */}
       <main className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* COLONNA SINISTRA */}
         <section className="lg:col-span-5 flex flex-col gap-6">
           <div className="bg-gradient-to-br from-yellow-300 via-amber-300 to-yellow-400 rounded-3xl p-6 border-4 border-amber-400 shadow-xl text-center flex flex-col items-center justify-between relative overflow-hidden">
-            
             <div className="w-full">
-              <span className="inline-block bg-amber-900 text-yellow-200 text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider mb-2">
-                Effetto Vocale
-              </span>
+              <span className="inline-block bg-amber-900 text-yellow-200 text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider mb-2">Effetto Vocale</span>
               <h2 className="text-2xl md:text-3xl font-black text-amber-950">Il Bottone di Pio</h2>
-              <p className="text-amber-900 text-xs font-medium mt-1">
-                Premi per far cantare il pulcino con la voce che preferisci!
-              </p>
+              <p className="text-amber-900 text-xs font-medium mt-1">Premi per far cantare il pulcino con la voce che preferisci!</p>
             </div>
 
             <div className="my-8">
-              <button
-                onClick={() => speakPio(activePreset)}
-                className={`relative group inline-flex flex-col items-center justify-center w-52 h-52 md:w-60 md:h-60 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-8 border-amber-600 shadow-[0_16px_0_0_#b45309] active:shadow-[0_4px_0_0_#b45309] active:translate-y-3 transition-all cursor-pointer ${
-                  isPioPressed ? 'scale-95' : 'hover:scale-105'
-                }`}
-              >
+              <button onClick={() => speakPio(activePreset)} className={`relative group inline-flex flex-col items-center justify-center w-52 h-52 md:w-60 md:h-60 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-8 border-amber-600 shadow-[0_16px_0_0_#b45309] active:shadow-[0_4px_0_0_#b45309] active:translate-y-3 transition-all cursor-pointer ${isPioPressed ? 'scale-95' : 'hover:scale-105'}`}>
                 <span className="text-7xl md:text-8xl select-none filter drop-shadow">🐥</span>
-                <span className="font-black text-2xl md:text-3xl text-amber-950 tracking-wider mt-1 drop-shadow-sm">
-                  PIOOOOOO!
-                </span>
-                <span className="text-xs font-bold text-amber-900 bg-yellow-200/90 px-3 py-0.5 rounded-full mt-1">
-                  Toccami! 🔊
-                </span>
+                <span className="font-black text-2xl md:text-3xl text-amber-950 tracking-wider mt-1 drop-shadow-sm">PIOOOOOO!</span>
+                <span className="text-xs font-bold text-amber-900 bg-yellow-200/90 px-3 py-0.5 rounded-full mt-1">Toccami! 🔊</span>
               </button>
             </div>
 
             <div className="w-full bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-amber-400/60">
-              <label className="block text-xs font-black text-amber-950 uppercase tracking-wider mb-2 text-left">
-                Scegli il tipo di voce (Massimo 5):
-              </label>
-
+              <label className="block text-xs font-black text-amber-950 uppercase tracking-wider mb-2 text-left">Scegli il tipo di voce:</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {PIO_VOICE_PRESETS.map((preset) => {
                   const isSelected = activePreset === preset.id;
                   return (
-                    <button
-                      key={preset.id}
-                      onClick={() => {
-                        setActivePreset(preset.id);
-                        speakPio(preset.id);
-                      }}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl text-left border-2 transition-all ${
-                        isSelected 
-                          ? 'bg-amber-500 text-white border-amber-700 shadow font-black' 
-                          : 'bg-white hover:bg-amber-100 text-amber-950 border-amber-300 font-bold'
-                      }`}
-                    >
+                    <button key={preset.id} onClick={() => { setActivePreset(preset.id); speakPio(preset.id); }} className={`flex items-center gap-2 p-2.5 rounded-xl text-left border-2 transition-all ${isSelected ? 'bg-amber-500 text-white border-amber-700 shadow font-black' : 'bg-white hover:bg-amber-100 text-amber-950 border-amber-300 font-bold'}`}>
                       <span className="text-2xl">{preset.emoji}</span>
                       <div className="flex-1 min-w-0 leading-tight">
                         <div className="text-xs truncate">{preset.name}</div>
-                        <div className={`text-[10px] ${isSelected ? 'text-amber-100' : 'text-amber-700'} truncate font-normal`}>
-                          {preset.desc}
-                        </div>
+                        <div className={`text-[10px] ${isSelected ? 'text-amber-100' : 'text-amber-700'} truncate font-normal`}>{preset.desc}</div>
                       </div>
                     </button>
                   );
                 })}
               </div>
             </div>
-
           </div>
 
-          {/* INDICATORE PAUSA CAFFÈ / PRANZO (11:00 / 13:00) */}
           <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-md flex items-center gap-4">
             <span className="text-4xl animate-bounce">☕</span>
             <div>
@@ -771,51 +692,25 @@ export default function App() {
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
                 {(() => {
                   const now = new Date();
-                  const hours = now.getHours();
-                  const mins = now.getMinutes();
-                  const totalMins = hours * 60 + mins;
-
-                  const coffeeTime = 11 * 60; // 11:00
-                  const lunchTime = 13 * 60; // 13:00
-
-                  if (totalMins < coffeeTime) {
-                    const diff = coffeeTime - totalMins;
-                    const h = Math.floor(diff / 60);
-                    const m = diff % 60;
-                    return `☕ Mancano circa ${h > 0 ? h + 'h e ' : ''}${m} min alla Pausa Caffè delle 11:00!`;
-                  } else if (totalMins >= coffeeTime && totalMins <= coffeeTime + 30) {
-                    return `✨ È ora della Pausa Caffè! Goditi un buon caffè con i colleghi! ☕`;
-                  } else if (totalMins > coffeeTime + 30 && totalMins < lunchTime - 15) {
-                    const diff = lunchTime - totalMins;
-                    const h = Math.floor(diff / 60);
-                    const m = diff % 60;
-                    return `🍽️ Manca poco alla Pausa Pranzo delle 13:00 (${h > 0 ? h + 'h e ' : ''}${m} min). Inizia a prepararti!`;
-                  } else if (totalMins >= lunchTime - 15 && totalMins <= lunchTime) {
-                    return `🚨 Mancano meno di 15 minuti alle 13:00! Chiudi tutto e preparati per la Pausa Pranzo! 🍽️🏃‍♂️`;
-                  } else if (totalMins > lunchTime && totalMins <= lunchTime + 60) {
-                    return `🍲 Pausa Pranzo in corso! Buon appetito da parte di Pio!`;
-                  } else {
-                    return `🌟 Giornata lavorativa nel vivo. Preparati per le prossime scadenze!`;
-                  }
+                  const totalMins = now.getHours() * 60 + now.getMinutes();
+                  if (totalMins < 660) return `☕ Manca poco alla Pausa Caffè delle 11:00!`;
+                  if (totalMins <= 690) return `✨ È ora della Pausa Caffè! ☕`;
+                  if (totalMins < 765) return `🍽️ Manca poco alla Pausa Pranzo delle 13:00!`;
+                  if (totalMins <= 780) return `🚨 Mancano meno di 15 minuti alle 13:00! 🍽️`;
+                  if (totalMins <= 840) return `🍲 Pausa Pranzo in corso! Buon appetito!`;
+                  return `🌟 Giornata lavorativa nel vivo!`;
                 })()}
               </p>
             </div>
           </div>
         </section>
 
-        {/* COLONNA DESTRA */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-
-          {/* MENSA AZIENDALE */}
           <section className="bg-white rounded-3xl p-6 border-4 border-amber-300 shadow-xl relative overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div>
-                <span className="text-xs font-black bg-amber-100 text-amber-800 px-3 py-1 rounded-full uppercase">
-                  Pausa Pranzo
-                </span>
-                <h2 className="text-2xl font-black text-amber-950 mt-1 flex items-center gap-2">
-                  🍽️ Prenotazione Mensa
-                </h2>
+                <span className="text-xs font-black bg-amber-100 text-amber-800 px-3 py-1 rounded-full uppercase">Pausa Pranzo</span>
+                <h2 className="text-2xl font-black text-amber-950 mt-1 flex items-center gap-2">🍽️ Prenotazione Mensa</h2>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-black text-amber-600">{mensaList.length}</span>
@@ -836,25 +731,15 @@ export default function App() {
             <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-bold text-amber-900">Il tuo stato oggi:</p>
-                <p className="text-sm font-black text-slate-800">
-                  {isUserInMensa ? '✅ Sei già registrato per il pranzo!' : '❌ Non ti sei ancora segnato'}
-                </p>
+                <p className="text-sm font-black text-slate-800">{isUserInMensa ? '✅ Sei già registrato per il pranzo!' : '❌ Non ti sei ancora segnato'}</p>
               </div>
-
-              <div className="flex gap-2">
+              <div>
                 {!isUserInMensa ? (
-                  <button
-                    onClick={handleRegisterMensa}
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm px-6 py-3 rounded-2xl shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
-                  >
-                    <span>Segnati a Mensa!</span>
-                    <span className="text-lg">🍽️</span>
+                  <button onClick={handleRegisterMensa} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-black text-sm px-6 py-3 rounded-2xl shadow-lg border-b-4 border-orange-700 transition-all flex items-center gap-2">
+                    <span>Segnati a Mensa!</span><span>🍽️</span>
                   </button>
                 ) : (
-                  <button
-                    onClick={handleRevokeMensa}
-                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-rose-300 font-black text-xs px-4 py-2.5 rounded-xl transition-all"
-                  >
+                  <button onClick={handleRevokeMensa} className="bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-rose-300 font-black text-xs px-4 py-2.5 rounded-xl transition-all">
                     Revoca Presenza ✖
                   </button>
                 )}
@@ -862,27 +747,14 @@ export default function App() {
             </div>
 
             <div>
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">
-                Chi si è già segnato oggi:
-              </h3>
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Chi si è già segnato oggi:</h3>
               {mensaList.length === 0 ? (
-                <div className="text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold">
-                  Nessun pulcino si è ancora registrato a mensa per oggi. Sii il primo!
-                </div>
+                <div className="text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold">Nessun pulcino si è ancora registrato a mensa per oggi. Sii il primo!</div>
               ) : (
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
                   {mensaList.map(person => (
-                    <div 
-                      key={person.id} 
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border ${
-                        person.userId === currentUser?.id 
-                          ? 'bg-amber-200 text-amber-950 border-amber-400 ring-2 ring-amber-400/50' 
-                          : 'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      <span>🐥</span>
-                      <span>{person.name}</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">{person.time}</span>
+                    <div key={person.id} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border ${person.userId === currentUser?.id ? 'bg-amber-200 text-amber-950 border-amber-400 ring-2 ring-amber-400/50' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                      <span>🐥</span><span>{person.name}</span><span className="text-[10px] text-slate-400 font-semibold">{person.time}</span>
                     </div>
                   ))}
                 </div>
@@ -890,131 +762,67 @@ export default function App() {
             </div>
           </section>
 
-          {/* REGISTRO ORE CON MODIFICA ED ELIMINAZIONE */}
           <section className="bg-white rounded-3xl p-6 border-4 border-yellow-300 shadow-xl flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
               <div>
-                <span className="text-xs font-black bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full uppercase">
-                  Turni & Presenze
-                </span>
-                <h2 className="text-2xl font-black text-amber-950 mt-1 flex items-center gap-2">
-                  ⏰ Registro Lavoro & Stacco
-                </h2>
+                <span className="text-xs font-black bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full uppercase">Turni & Presenze</span>
+                <h2 className="text-2xl font-black text-amber-950 mt-1 flex items-center gap-2">⏰ Registro Lavoro & Stacco</h2>
               </div>
 
-              {/* IL PULSANTE DI CANCELLAZIONE TOTALE APPARE SOLO PER L'ADMIN */}
               {currentUser?.isAdmin && (
-                <button
-                  onClick={() => setShowClearConfirmModal(true)}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>🗑️</span>
-                  <span>Cancella Tutto (Admin)</span>
+                <button onClick={() => setShowClearConfirmModal(true)} className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+                  <span>🗑️</span><span>Cancella Tutto (Admin)</span>
                 </button>
               )}
             </div>
 
             <form onSubmit={handleAddWorkLog} className="bg-yellow-50/70 p-4 rounded-2xl border-2 border-yellow-200 flex flex-col gap-3">
-              <div className="text-xs font-bold text-amber-900">
-                Registra la tua presenza per: <strong className="text-slate-900">{currentUser?.name}</strong>
-              </div>
+              <div className="text-xs font-bold text-amber-900">Registra la tua presenza per: <strong className="text-slate-900">{currentUser?.name}</strong></div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">
-                    Giorno Straordinario:
-                  </label>
-                  <input
-                    type="date"
-                    value={formDate}
-                    onChange={(e) => setFormDate(e.target.value)}
-                    required
-                    className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 font-bold text-xs text-slate-800 focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">Giorno Straordinario:</label>
+                  <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} required className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 font-bold text-xs text-slate-800" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">
-                    Fino a che ora ti sei fermato?
-                  </label>
-                  <input
-                    type="time"
-                    value={formEndTime}
-                    onChange={(e) => setFormEndTime(e.target.value)}
-                    required
-                    className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 font-black text-slate-800 focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">Fino a che ora?</label>
+                  <input type="time" value={formEndTime} onChange={(e) => setFormEndTime(e.target.value)} required className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 font-black text-slate-800" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">
-                    Motivo / Nota (Opzionale)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Es. Straordinario inventario"
-                    value={formLogNote}
-                    onChange={(e) => setFormLogNote(e.target.value)}
-                    className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">Motivo / Nota (Opzionale)</label>
+                  <input type="text" placeholder="Es. Inventario" value={formLogNote} onChange={(e) => setFormLogNote(e.target.value)} className="w-full bg-white px-3 py-2 rounded-xl border-2 border-amber-300 text-xs font-semibold text-slate-800" />
                 </div>
               </div>
 
               <div className="bg-white p-3 rounded-xl border border-amber-200">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hasBreak}
-                      onChange={(e) => setHasBreak(e.target.checked)}
-                      className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
-                    />
-                    <span className="text-xs font-black text-slate-800">
-                      Hai fatto uno stacco durante il turno? (es. uscita o permesso)
-                    </span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={hasBreak} onChange={(e) => setHasBreak(e.target.checked)} className="w-4 h-4 text-amber-600 rounded" />
+                  <span className="text-xs font-black text-slate-800">Hai fatto uno stacco durante il turno?</span>
+                </label>
 
                 {hasBreak && (
                   <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-3">
                     <div className="flex-1">
                       <span className="text-[11px] font-bold text-slate-500 block mb-1">Dalle ore:</span>
-                      <input
-                        type="time"
-                        value={formBreakStart}
-                        onChange={(e) => setFormBreakStart(e.target.value)}
-                        className="w-full bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-300 font-bold text-xs"
-                      />
+                      <input type="time" value={formBreakStart} onChange={(e) => setFormBreakStart(e.target.value)} className="w-full bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-300 font-bold text-xs" />
                     </div>
                     <span className="text-slate-400 font-black mt-4">➜</span>
                     <div className="flex-1">
                       <span className="text-[11px] font-bold text-slate-500 block mb-1">Alle ore:</span>
-                      <input
-                        type="time"
-                        value={formBreakEnd}
-                        onChange={(e) => setFormBreakEnd(e.target.value)}
-                        className="w-full bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-300 font-bold text-xs"
-                      />
+                      <input type="time" value={formBreakEnd} onChange={(e) => setFormBreakEnd(e.target.value)} className="w-full bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-300 font-bold text-xs" />
                     </div>
                   </div>
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-amber-950 font-black py-2.5 rounded-xl shadow-md border-b-2 border-amber-700 active:border-b-0 active:translate-y-0.5 transition-all text-sm disabled:opacity-50"
-              >
+              <button type="submit" disabled={isSubmitting} className="w-full bg-amber-500 hover:bg-amber-600 text-amber-950 font-black py-2.5 rounded-xl shadow-md border-b-2 border-amber-700 transition-all text-sm disabled:opacity-50">
                 {isSubmitting ? 'Salvataggio in corso...' : '💾 Salva nel Registro Condiviso'}
               </button>
             </form>
 
-            {/* TABELLA CON PULSANTI MODIFICA ED ELIMINA */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider">
-                  Riepilogo Straordinari (Visibile a tutti)
-                </h3>
+                <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider">Riepilogo Straordinari</h3>
                 <span className="text-xs font-bold text-amber-800">{workLogs.length} Registrati</span>
               </div>
 
@@ -1029,9 +837,7 @@ export default function App() {
 
                 <div className="divide-y divide-slate-200 max-h-60 overflow-y-auto">
                   {workLogs.length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 text-xs font-bold">
-                      Nessun orario presente nel registro.
-                    </div>
+                    <div className="p-8 text-center text-slate-400 text-xs font-bold">Nessun orario presente nel registro.</div>
                   ) : (
                     workLogs.map(log => {
                       const breakTaken = log.breakStart && log.breakEnd;
@@ -1040,60 +846,24 @@ export default function App() {
                         <div key={log.id} className="grid grid-cols-12 px-3 py-3 text-xs items-center hover:bg-white transition-colors">
                           <div className="col-span-3 font-bold text-slate-800 truncate pr-2">
                             <span>{log.name}</span>
-                            {log.note && (
-                              <span className="block text-[10px] text-slate-400 font-normal truncate">
-                                📝 {log.note}
-                              </span>
-                            )}
+                            {log.note && <span className="block text-[10px] text-slate-400 font-normal truncate">📝 {log.note}</span>}
                           </div>
-
-                          <div className="col-span-3 text-center font-semibold text-slate-600 text-[11px]">
-                            📅 {log.date || 'Oggi'}
-                          </div>
-                          
+                          <div className="col-span-3 text-center font-semibold text-slate-600 text-[11px]">📅 {log.date || 'Oggi'}</div>
                           <div className="col-span-2 text-center">
-                            <span className="inline-block bg-amber-200 text-amber-950 font-black px-2 py-1 rounded-lg border border-amber-300">
-                              {log.endTime}
-                            </span>
+                            <span className="inline-block bg-amber-200 text-amber-950 font-black px-2 py-1 rounded-lg border border-amber-300">{log.endTime}</span>
                           </div>
-
                           <div className="col-span-2 text-center">
                             {breakTaken ? (
-                              <span className="inline-block bg-orange-100 text-orange-900 font-bold px-1.5 py-0.5 rounded-lg border border-orange-300 text-[10px]">
-                                {log.breakStart}-{log.breakEnd}
-                              </span>
+                              <span className="inline-block bg-orange-100 text-orange-900 font-bold px-1.5 py-0.5 rounded-lg border border-orange-300 text-[10px]">{log.breakStart}-{log.breakEnd}</span>
                             ) : (
-                              <span className="inline-block bg-slate-200 text-slate-500 font-semibold px-1.5 py-0.5 rounded-md text-[10px]">
-                                No
-                              </span>
+                              <span className="inline-block bg-slate-200 text-slate-500 font-semibold px-1.5 py-0.5 rounded-md text-[10px]">No</span>
                             )}
                           </div>
-
                           <div className="col-span-2 flex items-center justify-center gap-1">
                             {(isOwner || currentUser?.isAdmin) && (
                               <>
-                                <button
-                                  onClick={() => {
-                                    setEditingTurno(log);
-                                    setEditDate(log.date || new Date().toISOString().split('T')[0]);
-                                    setEditEndTime(log.endTime || '18:00');
-                                    setEditHasBreak(!!(log.breakStart && log.breakEnd));
-                                    setEditBreakStart(log.breakStart || '13:00');
-                                    setEditBreakEnd(log.breakEnd || '14:00');
-                                    setEditLogNote(log.note || '');
-                                  }}
-                                  className="p-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded font-bold text-xs"
-                                  title="Modifica turno"
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteWorkLog(log)}
-                                  className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded font-bold text-xs"
-                                  title="Elimina turno"
-                                >
-                                  🗑️
-                                </button>
+                                <button onClick={() => { setEditingTurno(log); setEditDate(log.date || new Date().toISOString().split('T')[0]); setEditEndTime(log.endTime || '18:00'); setEditHasBreak(!!(log.breakStart && log.breakEnd)); setEditBreakStart(log.breakStart || '13:00'); setEditBreakEnd(log.breakEnd || '14:00'); setEditLogNote(log.note || ''); }} className="p-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded font-bold text-xs" title="Modifica">✏️</button>
+                                <button onClick={() => handleDeleteWorkLog(log)} className="p-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded font-bold text-xs" title="Elimina">🗑️</button>
                               </>
                             )}
                           </div>
@@ -1104,191 +874,87 @@ export default function App() {
                 </div>
               </div>
             </div>
-
           </section>
-
         </div>
-
       </main>
 
-      {/* MODALE MODIFICA TURNO */}
       {editingTurno && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-amber-400 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-xl text-amber-950 flex items-center gap-2">
-                ✏️ Modifica Turno / Stacco
-              </h3>
-              <button 
-                onClick={() => setEditingTurno(null)}
-                className="text-slate-400 hover:text-slate-600 font-black text-lg"
-              >
-                ✕
-              </button>
+              <h3 className="font-black text-xl text-amber-950 flex items-center gap-2">✏️ Modifica Turno</h3>
+              <button onClick={() => setEditingTurno(null)} className="text-slate-400 font-black text-lg">✕</button>
             </div>
 
             <form onSubmit={handleUpdateWorkLog} className="mt-4 space-y-4">
               <div>
                 <label className="block text-xs font-black text-slate-700 uppercase mb-1">Giorno:</label>
-                <input
-                  type="date"
-                  required
-                  value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-bold text-sm focus:outline-none focus:border-amber-500"
-                />
+                <input type="date" required value={editDate} onChange={(e) => setEditDate(e.target.value)} className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-bold text-sm" />
               </div>
-
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase mb-1">Fine Turno (Ora):</label>
-                <input
-                  type="time"
-                  required
-                  value={editEndTime}
-                  onChange={(e) => setEditEndTime(e.target.value)}
-                  className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-bold text-sm focus:outline-none focus:border-amber-500"
-                />
+                <label className="block text-xs font-black text-slate-700 uppercase mb-1">Fine Turno:</label>
+                <input type="time" required value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-bold text-sm" />
               </div>
-
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <label className="flex items-center gap-2 cursor-pointer mb-2">
-                  <input
-                    type="checkbox"
-                    checked={editHasBreak}
-                    onChange={(e) => setEditHasBreak(e.target.checked)}
-                    className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
-                  />
+                  <input type="checkbox" checked={editHasBreak} onChange={(e) => setEditHasBreak(e.target.checked)} className="w-4 h-4 text-amber-600 rounded" />
                   <span className="text-xs font-black text-slate-800">Includi stacco / pausa</span>
                 </label>
-
                 {editHasBreak && (
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                    <input
-                      type="time"
-                      value={editBreakStart}
-                      onChange={(e) => setEditBreakStart(e.target.value)}
-                      className="w-full bg-white px-2 py-1 rounded border border-slate-300 text-xs font-bold"
-                    />
+                    <input type="time" value={editBreakStart} onChange={(e) => setEditBreakStart(e.target.value)} className="w-full bg-white px-2 py-1 rounded border border-slate-300 text-xs font-bold" />
                     <span>➜</span>
-                    <input
-                      type="time"
-                      value={editBreakEnd}
-                      onChange={(e) => setEditBreakEnd(e.target.value)}
-                      className="w-full bg-white px-2 py-1 rounded border border-slate-300 text-xs font-bold"
-                    />
+                    <input type="time" value={editBreakEnd} onChange={(e) => setEditBreakEnd(e.target.value)} className="w-full bg-white px-2 py-1 rounded border border-slate-300 text-xs font-bold" />
                   </div>
                 )}
               </div>
-
               <div>
                 <label className="block text-xs font-black text-slate-700 uppercase mb-1">Nota:</label>
-                <input
-                  type="text"
-                  value={editLogNote}
-                  onChange={(e) => setEditLogNote(e.target.value)}
-                  className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-semibold text-sm focus:outline-none focus:border-amber-500"
-                />
+                <input type="text" value={editLogNote} onChange={(e) => setEditLogNote(e.target.value)} className="w-full bg-slate-50 px-3 py-2.5 rounded-xl border-2 border-slate-200 font-semibold text-sm" />
               </div>
-
               <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingTurno(null)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black py-2 rounded-xl text-xs shadow"
-                >
-                  Salva Modifiche 💾
-                </button>
+                <button type="button" onClick={() => setEditingTurno(null)} className="flex-1 bg-slate-100 text-slate-700 font-bold py-2 rounded-xl text-xs">Annulla</button>
+                <button type="submit" className="flex-1 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black py-2 rounded-xl text-xs shadow">Salva 💾</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODALE AVVISO FLASH */}
       {showBroadcastModal && currentUser?.isAdmin && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-rose-400 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-xl text-rose-950 flex items-center gap-2">
-                📢 Invia Avviso Flash a Tutti
-              </h3>
-              <button 
-                onClick={() => setShowBroadcastModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-black text-lg"
-              >
-                ✕
-              </button>
+              <h3 className="font-black text-xl text-rose-950 flex items-center gap-2">📢 Invia Avviso Flash</h3>
+              <button onClick={() => setShowBroadcastModal(false)} className="text-slate-400 font-black text-lg">✕</button>
             </div>
-
             <form onSubmit={handleSendBroadcast} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-black text-slate-700 uppercase mb-1">
-                  Testo del messaggio:
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Es. Oggi la mensa chiude alle 13:00!"
-                  value={newBroadcastText}
-                  onChange={(e) => setNewBroadcastText(e.target.value)}
-                  className="w-full bg-slate-50 p-3 rounded-xl border-2 border-slate-200 font-semibold text-sm focus:outline-none focus:border-rose-500"
-                />
+                <label className="block text-xs font-black text-slate-700 uppercase mb-1">Testo del messaggio:</label>
+                <textarea required rows={3} placeholder="Es. Oggi la mensa chiude alle 13:00!" value={newBroadcastText} onChange={(e) => setNewBroadcastText(e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl border-2 border-slate-200 font-semibold text-sm" />
               </div>
-
               <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowBroadcastModal(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black py-2 rounded-xl text-xs shadow-md"
-                >
-                  Invia 📢
-                </button>
+                <button type="button" onClick={() => setShowBroadcastModal(false)} className="flex-1 bg-slate-100 text-slate-700 font-bold py-2 rounded-xl text-xs">Annulla</button>
+                <button type="submit" className="flex-1 bg-rose-600 text-white font-black py-2 rounded-xl text-xs shadow-md">Invia 📢</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODALE CONFERMA CANCELLAZIONE TOTALE ( SOLO ADMIN ) */}
       {showClearConfirmModal && currentUser?.isAdmin && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-4 border-rose-400 shadow-2xl text-center">
             <span className="text-4xl block mb-2">🗑️</span>
             <h3 className="font-black text-lg text-slate-900">Cancellare tutto il registro?</h3>
-            <p className="text-xs text-slate-600 mt-2">
-              Questa azione eliminerà permanentemente tutte le ore e gli stacchi segnati per tutti i collaboratori.
-            </p>
-
+            <p className="text-xs text-slate-600 mt-2">Questa azione eliminerà permanentemente tutte le ore segnate per tutti.</p>
             <div className="mt-5 flex gap-2">
-              <button
-                onClick={() => setShowClearConfirmModal(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleClearAllLogs}
-                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-xs shadow-md"
-              >
-                Sì, Cancella Tutto
-              </button>
+              <button onClick={() => setShowClearConfirmModal(false)} className="flex-1 bg-slate-100 text-slate-700 font-bold py-2.5 rounded-xl text-xs">Annulla</button>
+              <button onClick={handleClearAllLogs} className="flex-1 bg-rose-600 text-white font-black py-2.5 rounded-xl text-xs shadow-md">Sì, Cancella</button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
