@@ -74,13 +74,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio (Con Pio Sonnolento personalizzato a sbadiglio)
+// 5 Preset Vocali ufficiali di Pio aggiornati
 const PIO_VOICE_PRESETS = [
-  { id: 'normale', name: 'Pio Classico', desc: 'Squillante e bilanciato', pitch: 1.0, rate: 1.0, emoji: '🐥' },
-  { id: 'profondo', name: 'Pio Baritono', desc: 'Bassissimo, profondo e lento', pitch: 0.1, rate: 0.5, emoji: '🐻' },
-  { id: 'acuto', name: 'Pio Hyper-Acuto', desc: 'Altissimo, vispo e sottilissimo', pitch: 1.9, rate: 1.25, emoji: '🐣' },
-  { id: 'addormentato', name: 'Pio Sonnolento', desc: 'Sembra uno sbadiglio profondo', pitch: 0.3, rate: 0.35, emoji: '🥱', customText: 'piiiiiiiiiooooooo... zzz...' },
-  { id: 'frenetico', name: 'Pio Turbo-Speed', desc: 'Velocissimo e scattante', pitch: 1.6, rate: 1.85, emoji: '⚡' }
+  { id: 'normale', name: 'Pio Classico', desc: 'Naturale e bilanciato', pitch: 1.0, rate: 1.05, emoji: '🐥', customText: 'Pio!' },
+  { id: 'profondo', name: 'Pio Baritono', desc: 'Bassissimo, profondo e cavernoso', pitch: 0.05, rate: 0.4, emoji: '🐻', customText: 'PIOOOOOO' },
+  { id: 'addormentato', name: 'Pio Sonnolento', desc: 'Sembra uno sbadiglio profondo', pitch: 0.25, rate: 0.35, emoji: '🥱', customText: 'piiiiiioooo... uuuuh...' },
+  { id: 'turbo', name: 'Pio Turbo', desc: 'Velocissimo e scattante', pitch: 1.4, rate: 2.0, emoji: '⚡', customText: 'Pio!' },
+  { id: 'super', name: 'Super Pio', desc: 'Ripete la parola 5 volte di fila!', pitch: 1.2, rate: 1.3, emoji: '⭐', customText: 'Pio! Pio! Pio! Pio! Pio!' }
 ];
 
 export default function App() {
@@ -180,7 +180,10 @@ export default function App() {
     };
   }, [authUser]);
 
-  const [activePreset, setActivePreset] = useState('normale');
+  const [activePreset, setActivePreset] = useState(() => {
+    return localStorage.getItem('pio_active_preset') || 'normale';
+  });
+  
   const [isPioPressed, setIsPioPressed] = useState(false);
   const [mensaSuccessAlert, setMensaSuccessAlert] = useState(false);
   
@@ -200,13 +203,12 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- MOTORE AUDIO VOCALE CON SUPPORTO AL TESTO PERSONALIZZATO (SBADIGLIO) ---
   const speakPio = (presetId = activePreset) => {
     setIsPioPressed(true);
     setTimeout(() => setIsPioPressed(false), 300);
 
     const preset = PIO_VOICE_PRESETS.find(p => p.id === presetId) || PIO_VOICE_PRESETS[0];
-    const textToSpeak = (preset as any).customText || "PIOOOOOO";
+    const textToSpeak = (preset as any).customText || "Pio!";
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -275,7 +277,7 @@ export default function App() {
       return;
     }
 
-    speakPio('acuto');
+    speakPio('turbo');
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -532,7 +534,7 @@ export default function App() {
       <header className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 shadow-lg border-b-4 border-amber-500 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-3xl shadow-md border-2 border-amber-600 animate-bounce">
+            <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center text-3xl shadow-md border-2 border-amber-600 transition-transform ${isPioPressed ? 'scale-125 rotate-12' : 'animate-bounce'}`}>
               🐥
             </div>
             <div>
@@ -663,7 +665,15 @@ export default function App() {
                 {PIO_VOICE_PRESETS.map((preset) => {
                   const isSelected = activePreset === preset.id;
                   return (
-                    <button key={preset.id} onClick={() => { setActivePreset(preset.id); speakPio(preset.id); }} className={`flex items-center gap-2 p-2.5 rounded-xl text-left border-2 transition-all ${isSelected ? 'bg-amber-500 text-white border-amber-700 shadow font-black' : 'bg-white hover:bg-amber-100 text-amber-950 border-amber-300 font-bold'}`}>
+                    <button 
+                      key={preset.id} 
+                      onClick={() => { 
+                        setActivePreset(preset.id); 
+                        localStorage.setItem('pio_active_preset', preset.id);
+                        speakPio(preset.id); 
+                      }} 
+                      className={`flex items-center gap-2 p-2.5 rounded-xl text-left border-2 transition-all ${isSelected ? 'bg-amber-500 text-white border-amber-700 shadow font-black' : 'bg-white hover:bg-amber-100 text-amber-950 border-amber-300 font-bold'}`}
+                    >
                       <span className="text-2xl">{preset.emoji}</span>
                       <div className="flex-1 min-w-0 leading-tight">
                         <div className="text-xs truncate">{preset.name}</div>
