@@ -44,16 +44,16 @@ const PIO_VOICE_PRESETS = [
 ];
 
 export default function App() {
-  // --- STATO AUTENTICAZIONE E UTENTI CLOUD ---
-  const [authUser, setAuthUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
+  // --- STATO AUTENTICAZIONE E UTENTI CLOUD (Tipizzati per evitare errori TS) ---
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Dati sincronizzati in tempo reale
-  const [mensaList, setMensaList] = useState([]);
-  const [workLogs, setWorkLogs] = useState([]);
-  const [broadcastMessage, setBroadcastMessage] = useState(null);
-  const [dismissedBroadcastId, setDismissedBroadcastId] = useState(() => {
+  const [mensaList, setMensaList] = useState<any[]>([]);
+  const [workLogs, setWorkLogs] = useState<any[]>([]);
+  const [broadcastMessage, setBroadcastMessage] = useState<any>(null);
+  const [dismissedBroadcastId, setDismissedBroadcastId] = useState<string | null>(() => {
     return localStorage.getItem('pio_last_dismissed_broadcast') || null;
   });
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -68,7 +68,7 @@ export default function App() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   // Stati per la modifica dei turni
-  const [editingTurno, setEditingTurno] = useState(null);
+  const [editingTurno, setEditingTurno] = useState<any>(null);
   const [editDate, setEditDate] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
   const [editHasBreak, setEditHasBreak] = useState(false);
@@ -109,7 +109,7 @@ export default function App() {
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       setUsers(list);
 
-      const myProfile = list.find(u => u.id === authUser.uid);
+      const myProfile = list.find((u: any) => u.id === authUser.uid);
       if (myProfile) {
         setCurrentUser(myProfile);
       } else {
@@ -124,14 +124,14 @@ export default function App() {
 
     const unsubLogs = onSnapshot(logsCol, (snapshot) => {
       const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      list.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
       setWorkLogs(list);
     }, (error) => console.error("Errore sync straordinari:", error));
 
     const unsubBroadcast = onSnapshot(broadcastCol, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       if (docs.length > 0) {
-        docs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        docs.sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
         setBroadcastMessage(docs[0]);
       } else {
         setBroadcastMessage(null);
@@ -162,14 +162,14 @@ export default function App() {
   // Modali
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = (text) => {
+  const showToast = (text: string) => {
     setToastMessage(text);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- MOTORE AUDIO VOCALE (SENZA BEEP ELETTRONICO) ---
+  // --- MOTORE AUDIO VOCALE ---
   const speakPio = (presetId = activePreset) => {
     setIsPioPressed(true);
     setTimeout(() => setIsPioPressed(false), 300);
@@ -184,9 +184,9 @@ export default function App() {
       utterance.rate = preset.rate;
       
       const voices = window.speechSynthesis.getVoices();
-      const naturalVoice = voices.find(v => 
+      const naturalVoice = voices.find((v: any) => 
         v.lang.toLowerCase().startsWith('it') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Alice'))
-      ) || voices.find(v => v.lang.toLowerCase().startsWith('it'));
+      ) || voices.find((v: any) => v.lang.toLowerCase().startsWith('it'));
 
       if (naturalVoice) {
         utterance.voice = naturalVoice;
@@ -196,7 +196,7 @@ export default function App() {
   };
 
   // --- LOGICHE AUTENTICAZIONE REALE ---
-  const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, authEmail, authPassword);
@@ -206,7 +206,7 @@ export default function App() {
     }
   };
 
-  const handleRegisterSubmit = async (e) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authName.trim()) {
       showToast('Inserisci il tuo nome e cognome.');
@@ -223,7 +223,7 @@ export default function App() {
         createdAt: Date.now()
       });
       showToast('🐣 Registrazione completata! In attesa di autorizzazione.');
-    } catch (err) {
+    } catch (err: any) {
       showToast('❌ Errore durante la registrazione: ' + err.message);
     }
   };
@@ -235,7 +235,7 @@ export default function App() {
 
   const isUserInMensa = useMemo(() => {
     if (!currentUser) return false;
-    return mensaList.some(item => item.userId === currentUser.id);
+    return mensaList.some((item: any) => item.userId === currentUser.id);
   }, [mensaList, currentUser]);
 
   const handleRegisterMensa = async () => {
@@ -276,7 +276,7 @@ export default function App() {
     }
   };
 
-  const handleAddWorkLog = async (e) => {
+  const handleAddWorkLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser || !currentUser) return;
     if (!currentUser.approved) {
@@ -311,11 +311,10 @@ export default function App() {
     }
   };
 
-  const handleUpdateWorkLog = async (e) => {
+  const handleUpdateWorkLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTurno) return;
 
-    // Controllo di sicurezza: solo il proprietario o l'admin possono modificare
     if (editingTurno.userId !== currentUser?.id && !currentUser?.isAdmin) {
       showToast('❌ Non puoi modificare il turno di un altro utente.');
       return;
@@ -337,8 +336,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteWorkLog = async (log) => {
-    // Controllo di sicurezza: solo il proprietario o l'admin possono eliminare
+  const handleDeleteWorkLog = async (log: any) => {
     if (log.userId !== currentUser?.id && !currentUser?.isAdmin) {
       showToast('❌ Non puoi eliminare il turno di un altro utente.');
       return;
@@ -353,7 +351,7 @@ export default function App() {
     }
   };
 
-  const handleSendBroadcast = async (e) => {
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser || !currentUser?.isAdmin) return;
     if (!newBroadcastText.trim()) return;
@@ -379,7 +377,6 @@ export default function App() {
     }
   };
 
-  // CANCELLAZIONE TOTALE RISERVATA ESCLUSIVAMENTE ALL'ADMIN
   const handleClearAllLogs = async () => {
     if (!authUser || !currentUser?.isAdmin) {
       showToast('❌ Azione non consentita: solo l\'amministratore può pulire l\'intero registro.');
@@ -387,7 +384,7 @@ export default function App() {
       return;
     }
     try {
-      const deletePromises = workLogs.map(log => 
+      const deletePromises = workLogs.map((log: any) => 
         deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'work_logs', log.id))
       );
       await Promise.all(deletePromises);
@@ -398,7 +395,7 @@ export default function App() {
     }
   };
 
-  const handleToggleAuthorization = async (userId, newStatus) => {
+  const handleToggleAuthorization = async (userId: string, newStatus: boolean) => {
     if (!authUser || !currentUser?.isAdmin) return;
     try {
       const userDoc = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
@@ -409,7 +406,7 @@ export default function App() {
     }
   };
 
-  const handleDismissBroadcast = (id) => {
+  const handleDismissBroadcast = (id: string) => {
     setDismissedBroadcastId(id);
     localStorage.setItem('pio_last_dismissed_broadcast', id);
   };
@@ -617,7 +614,7 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              {users.map(u => (
+              {users.map((u: any) => (
                 <div key={u.id} className="flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50/50 rounded-xl border border-slate-200">
                   <div>
                     <span className="font-bold text-slate-800">{u.name}</span>
@@ -833,7 +830,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
-                  {mensaList.map(person => (
+                  {mensaList.map((person: any) => (
                     <div 
                       key={person.id} 
                       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black border ${
@@ -995,7 +992,7 @@ export default function App() {
                       Nessun orario presente nel registro.
                     </div>
                   ) : (
-                    workLogs.map(log => {
+                    workLogs.map((log: any) => {
                       const breakTaken = log.breakStart && log.breakEnd;
                       const isOwner = currentUser && log.userId === currentUser.id;
                       return (
