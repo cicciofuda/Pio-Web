@@ -20,7 +20,7 @@ import {
 
 // CONFIGURAZIONE FIREBASE - PIO WEB
 const firebaseConfig = {
-  apiKey: "AIzaSyDahGjnl8LvyjRKBHui5Lj530Z_Wun07u4",
+  apiKey: "AIzaSyC8uXfyLicFBZWP4KlAvUUsnVe14CVioko",
   authDomain: "pio-web-f402c.firebaseapp.com",
   projectId: "pio-web-f402c",
   storageBucket: "pio-web-f402c.firebasestorage.app",
