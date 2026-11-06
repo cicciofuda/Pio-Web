@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User as FirebaseUser
+  type User as FirebaseUser
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -74,7 +74,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "pio-web-app";
 
-// 5 Preset Vocali ufficiali di Pio (MODIFICATI E MOLTO PIÙ DIVERSI TRA LORO)
+// 5 Preset Vocali ufficiali di Pio (Con tonalità distinte)
 const PIO_VOICE_PRESETS = [
   { id: 'normale', name: 'Pio Classico', desc: 'Squillante e bilanciato', pitch: 1.0, rate: 1.0, emoji: '🐥' },
   { id: 'profondo', name: 'Pio Baritono', desc: 'Molto basso, profondo e lento', pitch: 0.35, rate: 0.75, emoji: '🐻' },
@@ -84,12 +84,10 @@ const PIO_VOICE_PRESETS = [
 ];
 
 export default function App() {
-  // --- STATO AUTENTICAZIONE E UTENTI CLOUD ---
   const [authUser, setAuthUser] = useState<FirebaseUser | null>(null);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
 
-  // Dati sincronizzati in tempo reale
   const [mensaList, setMensaList] = useState<MensaItem[]>([]);
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [broadcastMessage, setBroadcastMessage] = useState<BroadcastMessage | null>(null);
@@ -100,14 +98,12 @@ export default function App() {
   const [newBroadcastText, setNewBroadcastText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form Autenticazione (Email/Password)
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
   const [authRole, setAuthRole] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  // Stati per la modifica dei turni
   const [editingTurno, setEditingTurno] = useState<WorkLog | null>(null);
   const [editDate, setEditDate] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
@@ -116,7 +112,6 @@ export default function App() {
   const [editBreakEnd, setEditBreakEnd] = useState('');
   const [editLogNote, setEditLogNote] = useState('');
 
-  // 1. Ascolto dello Stato di Autenticazione Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setAuthUser(user);
@@ -124,7 +119,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Ascolto dei dati Cloud (Mensa, Utenti, Straordinari, Avvisi)
   useEffect(() => {
     if (!authUser) return;
 
@@ -186,12 +180,10 @@ export default function App() {
     };
   }, [authUser]);
 
-  // --- STATI UI ---
   const [activePreset, setActivePreset] = useState('normale');
   const [isPioPressed, setIsPioPressed] = useState(false);
   const [mensaSuccessAlert, setMensaSuccessAlert] = useState(false);
   
-  // Form Registro Ore & Straordinario
   const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [formEndTime, setFormEndTime] = useState('18:00');
   const [hasBreak, setHasBreak] = useState(false);
@@ -199,7 +191,6 @@ export default function App() {
   const [formBreakEnd, setFormBreakEnd] = useState('14:00');
   const [formLogNote, setFormLogNote] = useState('');
 
-  // Modali
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -209,7 +200,6 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // --- MOTORE AUDIO VOCALE RINNOVATO ---
   const speakPio = (presetId = activePreset) => {
     setIsPioPressed(true);
     setTimeout(() => setIsPioPressed(false), 300);
@@ -233,7 +223,6 @@ export default function App() {
     }
   };
 
-  // --- LOGICHE AUTENTICAZIONE REALE ---
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
